@@ -146,6 +146,7 @@
       this.display_disabled_options = this.options.display_disabled_options != null ? this.options.display_disabled_options : true;
       this.include_group_label_in_selected = this.options.include_group_label_in_selected || false;
       this.max_shown_results = this.options.max_shown_results || Number.POSITIVE_INFINITY;
+      this.searchable_model = this.options.searchable_model || [];
       return this.case_sensitive_search = this.options.case_sensitive_search || false;
     };
 
@@ -366,8 +367,10 @@
             if (option.search_match) {
               if (searchText.length) {
                 startpos = option.search_text.search(zregex);
-                text = option.search_text.substr(0, startpos + searchText.length) + '</em>' + option.search_text.substr(startpos + searchText.length);
-                option.search_text = text.substr(0, startpos) + '<em>' + text.substr(startpos);
+                if (startpos >= 0) {
+                  text = option.search_text.substr(0, startpos + searchText.length) + '</em>' + option.search_text.substr(startpos + searchText.length);
+                  option.search_text = text.substr(0, startpos) + '<em>' + text.substr(startpos);
+                }
               }
               if (results_group != null) {
                 results_group.group_match = true;
@@ -397,6 +400,9 @@
 
     AbstractChosen.prototype.search_string_match = function(search_string, regex) {
       var part, parts, _i, _len;
+      var searchable_data = this.searchable_model.find(function (elem) {
+        return elem.name == search_string;
+      });
       if (regex.test(search_string)) {
         return true;
       } else if (this.enable_split_word_search && (search_string.indexOf(" ") >= 0 || search_string.indexOf("[") === 0)) {
@@ -407,6 +413,12 @@
             if (regex.test(part)) {
               return true;
             }
+          }
+        }
+      } else if (searchable_data.keywords) {
+        for (var key in searchable_data.keywords) {
+          if (regex.test(searchable_data.keywords[key])) {
+            return true;
           }
         }
       }
